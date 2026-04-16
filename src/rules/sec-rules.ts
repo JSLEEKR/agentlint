@@ -32,9 +32,6 @@ export const secNoSecretsInConfig: Rule = {
         inCodeBlock = !inCodeBlock;
       }
 
-      // Skip lines that look like documentation examples
-      if (isExampleLine(line)) continue;
-
       for (const { pattern, name } of SECRET_PATTERNS) {
         pattern.lastIndex = 0;
         const match = pattern.exec(line);
@@ -43,7 +40,9 @@ export const secNoSecretsInConfig: Rule = {
           // But don't filter structurally-identifiable tokens (AKIA*, ghp_*, sk-ant-*, etc.)
           const value = match[0];
           const isStructuralToken = /^(?:AKIA|ghp_|gho_|github_pat_|sk-ant-|xoxb-|xoxp-|-----BEGIN)/.test(value);
-          if (!isStructuralToken && isPlaceholder(value)) continue;
+          // Skip example lines only for non-structural tokens — structural tokens
+          // (real AWS keys, GitHub PATs, etc.) must ALWAYS be flagged even on example lines.
+          if (!isStructuralToken && (isExampleLine(line) || isPlaceholder(value))) continue;
 
           ctx.report({
             severity: "error",

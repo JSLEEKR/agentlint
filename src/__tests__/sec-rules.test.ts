@@ -130,6 +130,51 @@ describe("sec-no-secrets-in-config", () => {
     expect(diagnostics.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("should detect structural tokens even on lines with template variables", () => {
+    // Regression: isExampleLine was applied per-line BEFORE pattern matching,
+    // so any line containing ${...} was skipped entirely — even if it had a real
+    // structural token like AKIA*, ghp_*, sk-ant-*.
+    const lineAws = "Set AKIAIOSFODNN7EXAMPLE via ${AWS_PROFILE}";
+    const lineGhp = "ghp_1234567890abcdefghijklmnopqrstuvwxyz12 stored in ${TOKEN_VAR}";
+    const lineAnt = "sk-ant-api03-REALKEY1234567890abcdefghij via ${ANTHROPIC_HOME}";
+    const content = `## Config\n${lineAws}\n${lineGhp}\n${lineAnt}\n`;
+    const lines = content.split("\n");
+    const file: ParsedFile = {
+      path: "CLAUDE.md",
+      type: "claude-md",
+      content,
+      lines,
+      parsed: parseMarkdown(content, lines),
+    };
+    const { ctx, diagnostics } = makeContext(file);
+    secNoSecretsInConfig.check(ctx);
+    // All three structural tokens MUST be detected even though lines contain ${...}
+    const awsDiags = diagnostics.filter((d) => d.message.includes("AWS"));
+    const ghpDiags = diagnostics.filter((d) => d.message.includes("GitHub"));
+    const antDiags = diagnostics.filter((d) => d.message.includes("Anthropic"));
+    expect(awsDiags.length).toBeGreaterThanOrEqual(1);
+    expect(ghpDiags.length).toBeGreaterThanOrEqual(1);
+    expect(antDiags.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should still skip non-structural tokens on example lines", () => {
+    // Non-structural patterns (generic api_key=...) should still be skipped
+    // on lines with ${...} to avoid false positives on template documentation.
+    const content = "## Config\napi_key: someRandomKey12345678 via ${CONFIG_PATH}\n";
+    const lines = content.split("\n");
+    const file: ParsedFile = {
+      path: "CLAUDE.md",
+      type: "claude-md",
+      content,
+      lines,
+      parsed: parseMarkdown(content, lines),
+    };
+    const { ctx, diagnostics } = makeContext(file);
+    secNoSecretsInConfig.check(ctx);
+    // Non-structural token on a ${}-containing line should be skipped
+    expect(diagnostics).toHaveLength(0);
+  });
+
   it("should handle clean config", () => {
     const file: ParsedFile = {
       path: "CLAUDE.md",
