@@ -5,7 +5,33 @@
 - **Language**: TypeScript
 - **Date**: 2026-04-16
 - **Build status**: New build
-- **Quality gate status**: Pending evaluation
+- **Quality gate status**: PASSED (8/8 gates)
+- **Eval cycles**: 8 (A-E dirty / 10 bugs, F-G-H consecutive CLEAN)
+- **Ship date**: 2026-04-16
+- **Release**: https://github.com/JSLEEKR/agentlint/releases/tag/v1.0.0
+
+## Eval Summary
+
+| Cycle | Verdict | Bugs | Key Findings |
+|-------|---------|------|-------------|
+| A | DIRTY | 3 | Info severity ignored, quiet mode counts/exit code wrong |
+| B | DIRTY | 2 | CRLF breaks all parsing (HIGH), dist/ not rebuilt |
+| C | DIRTY | 2 | findCommandLine regex-escape+includes mismatch, unused ajv dep |
+| D | DIRTY | 2 | isExampleLine bypasses structural token detection, missing prepublishOnly |
+| E | DIRTY | 1 | Doc-drift badge test silently passes (nested vitest) |
+| F | CLEAN | 0 | 1/3 |
+| G | CLEAN | 0 | 2/3 (tested fix interactions, config edge cases) |
+| H | CLEAN | 0 | 3/3 GATE PASS (re-examined top 5 not-a-bugs, all 10 fixes verified) |
+
+## Quality Gates (8/8)
+
+- [x] Tests pass: 307/307 (14 suites)
+- [x] Test count >= 150: 307
+- [x] README >= 300 lines: 368
+- [x] For-the-badge badges: MIT, TypeScript 5.7, Node.js >=18, tests 307, SARIF 2.1
+- [x] GitHub topics >= 8: agent, claude, config, linting, mcp, static-analysis, typescript, validation
+- [x] License: MIT
+- [x] CHANGELOG: exists
 
 ## Build Summary
 
