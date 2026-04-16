@@ -175,9 +175,10 @@ function checkJsonHooksForDangerousPatterns(
 }
 
 function findCommandLine(lines: string[], command: string): number {
-  const escaped = command.substring(0, 30).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Use raw substring for literal String.includes() matching — no regex escaping
+  const fragment = command.substring(0, Math.min(command.length, 30));
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes(escaped.substring(0, 20))) return i + 1;
+    if (lines[i].includes(fragment)) return i + 1;
   }
   return 1;
 }

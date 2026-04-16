@@ -245,6 +245,42 @@ describe("sec-no-dangerous-hooks", () => {
     secNoDangerousHooks.check(ctx);
     expect(diagnostics).toHaveLength(0);
   });
+
+  it("should report correct line number for commands with regex-special chars in JSON", () => {
+    // Commands containing . $ + etc. should still match the correct line.
+    // Regression: findCommandLine previously regex-escaped then used includes(),
+    // causing escaped backslashes to never match the actual line content.
+    const lines = [
+      "{",
+      '  "hooks": {',
+      '    "pre_check": [',
+      '      {',
+      '        "command": "chmod +s ./deploy.sh"',
+      "      }",
+      "    ]",
+      "  }",
+      "}",
+    ];
+    const file: ParsedFile = {
+      path: ".claude/settings.json",
+      type: "settings-json",
+      content: lines.join("\n"),
+      lines,
+      parsed: {
+        kind: "json",
+        data: {
+          hooks: {
+            pre_check: [{ command: "chmod +s ./deploy.sh" }],
+          },
+        },
+      },
+    };
+    const { ctx, diagnostics } = makeContext(file);
+    secNoDangerousHooks.check(ctx);
+    expect(diagnostics.length).toBeGreaterThanOrEqual(1);
+    // The diagnostic should point to line 5 where the command is, NOT line 1
+    expect(diagnostics[0].line).toBe(5);
+  });
 });
 
 describe("sec-no-broad-permissions", () => {
