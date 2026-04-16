@@ -11,7 +11,7 @@
 
 - Source lines: 3,156
 - Total lines (incl. tests): 6,374
-- Test count: 297
+- Test count: 304
 - Test suites: 14
 - Rules: 20 (4 struct, 4 ref, 4 sec, 4 con, 4 style)
 - Supported file formats: 11

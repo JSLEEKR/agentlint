@@ -191,4 +191,35 @@ describe("lint engine", () => {
     expect(sectionDiags[0].severity).toBe("info");
     expect(report.totalInfos).toBeGreaterThanOrEqual(1);
   });
+
+  it("should override rule-internal severity with config severity for all diagnostics", async () => {
+    // struct-claude-md-sections internally reports "info" for long sections
+    // but config says "error" — config should win for ALL diagnostics from that rule
+    let content = "## Section\n";
+    for (let i = 0; i < 110; i++) content += `Line ${i}\n`;
+    content += "## End\n";
+    fs.writeFileSync(path.join(tmpDir, "CLAUDE.md"), content, { encoding: "utf-8" });
+    fs.writeFileSync(
+      path.join(tmpDir, ".agentlintrc.json"),
+      JSON.stringify({
+        rules: {
+          "struct-claude-md-sections": "error",
+          "style-no-trailing-whitespace": "off",
+          "style-line-length": "off",
+          "ref-file-exists": "off",
+          "ref-model-valid": "off",
+        },
+      }),
+      { encoding: "utf-8" }
+    );
+    const report = await lint({ cwd: tmpDir });
+    const sectionDiags = report.results.flatMap((r) =>
+      r.diagnostics.filter((d) => d.ruleId === "struct-claude-md-sections")
+    );
+    // Long-section diagnostic should have config severity "error", not rule-internal "info"
+    expect(sectionDiags.length).toBeGreaterThanOrEqual(1);
+    for (const d of sectionDiags) {
+      expect(d.severity).toBe("error");
+    }
+  });
 });

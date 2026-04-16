@@ -135,6 +135,34 @@ describe("parseMarkdown", () => {
     const result = parseMarkdown(content, lines);
     expect(result.links).toHaveLength(3);
   });
+
+  it("should extract headings from CRLF content when lines are pre-stripped", () => {
+    // After scanner strips \\r, lines should parse correctly
+    const content = "## Section One\r\nContent\r\n## Section Two\r\n";
+    const lines = content.split("\n").map((l) => l.replace(/\r$/, ""));
+    const result = parseMarkdown(content, lines);
+    expect(result.headings).toHaveLength(2);
+    expect(result.headings[0].text).toBe("Section One");
+    expect(result.headings[1].text).toBe("Section Two");
+  });
+
+  it("should extract code blocks from CRLF content when lines are pre-stripped", () => {
+    const content = "```js\r\nconsole.log('hi');\r\n```\r\n";
+    const lines = content.split("\n").map((l) => l.replace(/\r$/, ""));
+    const result = parseMarkdown(content, lines);
+    expect(result.codeBlocks).toHaveLength(1);
+    expect(result.codeBlocks[0].language).toBe("js");
+    expect(result.codeBlocks[0].content).toBe("console.log('hi');");
+  });
+
+  it("should extract links from CRLF content when lines are pre-stripped", () => {
+    const content = "See [docs](./README.md) here\r\n";
+    const lines = content.split("\n").map((l) => l.replace(/\r$/, ""));
+    const result = parseMarkdown(content, lines);
+    expect(result.links).toHaveLength(1);
+    expect(result.links[0].text).toBe("docs");
+    expect(result.links[0].url).toBe("./README.md");
+  });
 });
 
 describe("parseJson", () => {

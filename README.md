@@ -1,7 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
-[![tests](https://img.shields.io/badge/tests-297-brightgreen.svg?style=for-the-badge)](https://github.com/JSLEEKR/agentlint)
+[![tests](https://img.shields.io/badge/tests-304-brightgreen.svg?style=for-the-badge)](https://github.com/JSLEEKR/agentlint)
 [![SARIF](https://img.shields.io/badge/Output-SARIF%202.1-purple.svg?style=for-the-badge)](https://sarifweb.azurewebsites.net/)
 
 # agentlint
@@ -359,7 +359,7 @@ agentlint detects:
 - **Private keys** (RSA, EC, embedded in configs)
 - **Database credentials** (connection strings with passwords)
 
-## 297 tests across 14 test suites
+## 304 tests across 14 test suites
 
 Test coverage includes parser tests, rule tests for all 5 categories, formatter tests, engine integration tests, edge cases, and documentation drift detection.
 

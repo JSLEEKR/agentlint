@@ -288,6 +288,37 @@ describe("integration: edge cases", () => {
     expect(report.filesScanned).toBe(1);
   });
 
+  it("should correctly parse CRLF files and detect headings", async () => {
+    // Write a file with CRLF line endings — common on Windows
+    fs.writeFileSync(
+      path.join(tmpDir, "CLAUDE.md"),
+      "## Build Rules\r\n\r\n- Use TypeScript\r\n\r\n## Safety Gates\r\n\r\n- No force pushes\r\n",
+      { encoding: "utf-8" }
+    );
+    const report = await lint({ cwd: tmpDir });
+    expect(report.filesScanned).toBe(1);
+    // The CLAUDE.md has proper h2 headings — should NOT warn about missing headings
+    const noHeadingsDiag = report.results.flatMap((r) =>
+      r.diagnostics.filter(
+        (d) => d.ruleId === "struct-claude-md-sections" && d.message.includes("no headings")
+      )
+    );
+    expect(noHeadingsDiag).toHaveLength(0);
+  });
+
+  it("should correctly detect secrets in CRLF files", async () => {
+    fs.writeFileSync(
+      path.join(tmpDir, ".mcp.json"),
+      '{"token":"ghp_1234567890abcdefghijklmnopqrstuvwxyz12"}\r\n',
+      { encoding: "utf-8" }
+    );
+    const report = await lint({ cwd: tmpDir });
+    const secretDiags = report.results.flatMap((r) =>
+      r.diagnostics.filter((d) => d.ruleId === "sec-no-secrets-in-config")
+    );
+    expect(secretDiags.length).toBeGreaterThanOrEqual(1);
+  });
+
   it("should properly count diagnostics after quiet-mode filtering", async () => {
     // Simulate quiet mode: filter to errors only, recompute counts
     fs.writeFileSync(

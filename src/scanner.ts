@@ -72,7 +72,8 @@ export async function scanFiles(options: ScanOptions): Promise<ParsedFile[]> {
       const absPath = path.resolve(cwd, relPath);
       try {
         const content = fs.readFileSync(absPath, { encoding: "utf-8" });
-        const lines = content.split("\n");
+        // Strip \r from CRLF line endings for consistent cross-platform parsing
+        const lines = content.split("\n").map((l) => l.replace(/\r$/, ""));
         const parsed = parseFileContent(content, lines, type);
         files.push({
           path: normalizedPath,

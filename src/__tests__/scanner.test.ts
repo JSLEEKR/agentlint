@@ -168,4 +168,25 @@ describe("scanFiles", () => {
     const files = await scanFiles({ cwd: tmpDir });
     expect(files[0].path).not.toContain("\\");
   });
+
+  it("should strip CRLF line endings so parsers work correctly", async () => {
+    // Write a file with CRLF endings
+    fs.writeFileSync(
+      path.join(tmpDir, "CLAUDE.md"),
+      "## Section One\r\nContent\r\n## Section Two\r\n",
+      { encoding: "utf-8" }
+    );
+    const files = await scanFiles({ cwd: tmpDir });
+    expect(files).toHaveLength(1);
+    // Lines should not have trailing \r
+    for (const line of files[0].lines) {
+      expect(line.endsWith("\r")).toBe(false);
+    }
+    // Markdown headings should be parsed correctly
+    expect(files[0].parsed?.kind).toBe("markdown");
+    if (files[0].parsed?.kind === "markdown") {
+      expect(files[0].parsed.headings).toHaveLength(2);
+      expect(files[0].parsed.headings[0].text).toBe("Section One");
+    }
+  });
 });
