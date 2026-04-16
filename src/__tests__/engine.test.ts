@@ -164,4 +164,31 @@ describe("lint engine", () => {
     const report = await lint({ cwd: tmpDir });
     expect(report.filesScanned).toBe(4);
   });
+
+  it("should honor info severity setting in config", async () => {
+    fs.writeFileSync(
+      path.join(tmpDir, "CLAUDE.md"),
+      "No headings here, just text.\n",
+      { encoding: "utf-8" }
+    );
+    fs.writeFileSync(
+      path.join(tmpDir, ".agentlintrc.json"),
+      JSON.stringify({
+        rules: {
+          "struct-claude-md-sections": "info",
+          "style-no-trailing-whitespace": "off",
+          "style-line-length": "off",
+        },
+      }),
+      { encoding: "utf-8" }
+    );
+    const report = await lint({ cwd: tmpDir });
+    const sectionDiags = report.results.flatMap((r) =>
+      r.diagnostics.filter((d) => d.ruleId === "struct-claude-md-sections")
+    );
+    expect(sectionDiags.length).toBeGreaterThanOrEqual(1);
+    // The severity should be "info" because user config says "info"
+    expect(sectionDiags[0].severity).toBe("info");
+    expect(report.totalInfos).toBeGreaterThanOrEqual(1);
+  });
 });

@@ -287,4 +287,64 @@ describe("integration: edge cases", () => {
     const report = await lint({ cwd: tmpDir });
     expect(report.filesScanned).toBe(1);
   });
+
+  it("should properly count diagnostics after quiet-mode filtering", async () => {
+    // Simulate quiet mode: filter to errors only, recompute counts
+    fs.writeFileSync(
+      path.join(tmpDir, "CLAUDE.md"),
+      "No headings here.   \n",
+      { encoding: "utf-8" }
+    );
+    const report = await lint({ cwd: tmpDir });
+    // Should have warnings (trailing whitespace, no headings)
+    expect(report.totalWarnings).toBeGreaterThanOrEqual(1);
+
+    // Apply quiet-mode filtering (same logic as CLI)
+    for (const result of report.results) {
+      result.diagnostics = result.diagnostics.filter((d) => d.severity === "error");
+    }
+    report.results = report.results.filter((r) => r.diagnostics.length > 0);
+    // Recompute summary counts
+    const allDiags = report.results.flatMap((r) => r.diagnostics);
+    report.totalErrors = allDiags.filter((d) => d.severity === "error").length;
+    report.totalWarnings = allDiags.filter((d) => d.severity === "warning").length;
+    report.totalInfos = allDiags.filter((d) => d.severity === "info").length;
+
+    // After filtering: no errors means counts should be 0
+    expect(report.totalErrors).toBe(0);
+    expect(report.totalWarnings).toBe(0);
+    expect(report.totalInfos).toBe(0);
+  });
+
+  it("should respect info severity in config (not fall through to default)", async () => {
+    fs.writeFileSync(
+      path.join(tmpDir, "CLAUDE.md"),
+      "No headings at all.\n",
+      { encoding: "utf-8" }
+    );
+    fs.writeFileSync(
+      path.join(tmpDir, ".agentlintrc.json"),
+      JSON.stringify({
+        rules: {
+          "struct-claude-md-sections": "info",
+          "style-line-length": "off",
+          "style-no-trailing-whitespace": "off",
+          "ref-file-exists": "off",
+          "ref-model-valid": "off",
+        },
+      }),
+      { encoding: "utf-8" }
+    );
+    const report = await lint({ cwd: tmpDir });
+    const sectionDiags = report.results.flatMap((r) =>
+      r.diagnostics.filter((d) => d.ruleId === "struct-claude-md-sections")
+    );
+    expect(sectionDiags.length).toBeGreaterThanOrEqual(1);
+    // Must be "info" severity, not the default "warning"
+    for (const d of sectionDiags) {
+      expect(d.severity).toBe("info");
+    }
+    // Should count as info, not warning
+    expect(report.totalInfos).toBeGreaterThanOrEqual(1);
+  });
 });

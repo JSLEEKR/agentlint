@@ -54,6 +54,11 @@ program
           result.diagnostics = result.diagnostics.filter((d) => d.severity === "error");
         }
         report.results = report.results.filter((r) => r.diagnostics.length > 0);
+        // Recompute summary counts to match filtered results
+        const allDiags = report.results.flatMap((r) => r.diagnostics);
+        report.totalErrors = allDiags.filter((d) => d.severity === "error").length;
+        report.totalWarnings = allDiags.filter((d) => d.severity === "warning").length;
+        report.totalInfos = allDiags.filter((d) => d.severity === "info").length;
       }
 
       // Format output

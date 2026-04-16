@@ -70,7 +70,8 @@ export async function lint(options: LintOptions): Promise<LintReport> {
             ...diag,
             ruleId: rule.meta.id,
             category: rule.meta.category,
-            severity: diag.severity ?? severity,
+            // Config severity overrides the rule-provided severity
+            severity,
           });
         },
       };
@@ -145,7 +146,9 @@ function resolveSeverityFromSetting(
   defaultSeverity: Severity
 ): Severity {
   if (typeof setting === "string") {
-    if (setting === "error" || setting === "warn" || setting === "warning") return setting === "warn" ? "warning" : setting as Severity;
+    if (setting === "error") return "error";
+    if (setting === "warn" || setting === "warning") return "warning";
+    if (setting === "info") return "info";
     return defaultSeverity;
   }
 
