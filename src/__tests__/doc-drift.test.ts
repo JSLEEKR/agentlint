@@ -6,7 +6,6 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
 
 describe("documentation drift", () => {
   it("should have README badge test count matching actual test count", () => {
@@ -23,33 +22,23 @@ describe("documentation drift", () => {
 
     const badgeCount = parseInt(badgeMatch[1], 10);
 
-    // Count actual tests using vitest list
-    const projectRoot = path.resolve(import.meta.dirname, "../..");
-    let actualCount: number;
-    try {
-      const result = execSync("npx vitest list 2>/dev/null | wc -l", {
-        cwd: projectRoot,
-        encoding: "utf-8",
-        timeout: 30000,
-      });
-      actualCount = parseInt(result.trim(), 10);
-    } catch {
-      // If vitest list fails, try counting test names from our test files
-      const testFiles = fs.readdirSync(path.resolve(import.meta.dirname)).filter(
-        (f) => f.endsWith(".test.ts")
+    // Count actual test cases from test files using word-boundary regex.
+    // NOTE: Cannot use `npx vitest list` here because nested vitest
+    // execution (vitest inside vitest) returns 0 results.
+    const testFiles = fs.readdirSync(path.resolve(import.meta.dirname)).filter(
+      (f) => f.endsWith(".test.ts")
+    );
+    let actualCount = 0;
+    for (const file of testFiles) {
+      const content = fs.readFileSync(
+        path.resolve(import.meta.dirname, file),
+        { encoding: "utf-8" }
       );
-      actualCount = 0;
-      for (const file of testFiles) {
-        const content = fs.readFileSync(
-          path.resolve(import.meta.dirname, file),
-          { encoding: "utf-8" }
-        );
-        const matches = content.match(/\bit\(/g);
-        actualCount += matches ? matches.length : 0;
-      }
+      const matches = content.match(/\bit\(/g);
+      actualCount += matches ? matches.length : 0;
     }
 
-    if (!isNaN(actualCount) && actualCount > 0) {
+    if (actualCount > 0) {
       expect(badgeCount).toBe(actualCount);
     }
   });
